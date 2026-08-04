@@ -125,8 +125,6 @@ class Meting
             }
         }
 
-        curl_close($curl);
-
         return $this;
     }
 
@@ -913,7 +911,6 @@ class Meting
             'Connection: keep-alive',
         ));
         $response = curl_exec($curl);
-        curl_close($curl);
 
         if (is_string($response) && preg_match('/^Set-Cookie:\s*kw_token=([^;]+)/mi', $response, $match)) {
             $headers['Cookie'] = 'kw_token=' . $match[1];

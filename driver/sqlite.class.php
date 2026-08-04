@@ -34,8 +34,10 @@ CREATE TABLE `%dbname%` (
     }
     public function set($key, $value, $expire = 86400)
     {
+        $key = md5($key);
+        $this->db->query($this->db->delete('table.metingcache')->where('key = ?', $key));
         $this->db->query($this->db->insert('table.metingcache')->rows(array(
-            'key' => md5($key),
+            'key' => $key,
             'data' => $value,
             'time' => time() + $expire
         )));

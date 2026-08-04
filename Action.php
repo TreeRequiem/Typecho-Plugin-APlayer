@@ -17,6 +17,8 @@ class Action extends Widget implements ActionInterface
     private const SUPPORTED_SERVERS = array('netease', 'tencent', 'kugou', 'baidu', 'kuwo');
     private const SUPPORTED_TYPES = array('song', 'album', 'search', 'artist', 'playlist', 'lrc', 'url', 'pic');
 
+    private $cache;
+
     public function execute()
     {
     }
@@ -64,19 +66,75 @@ class Action extends Widget implements ActionInterface
 
     private function sendJson($data, $status = 200)
     {
-        http_response_code($status);
+        $this->response->setStatus($status);
         header('Content-Type: application/json; charset=UTF-8');
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     private function decodeJson($payload, $server, $type, $id)
     {
+        if (!is_string($payload) || $payload === '') {
+            $this->debugLog($server, $type, $id, 'empty JSON response');
+            return array();
+        }
+
         $data = json_decode($payload, true);
         if (!is_array($data)) {
             $this->debugLog($server, $type, $id, 'invalid JSON response');
             return array();
         }
 
+        return $data;
+    }
+
+    private function isUsableJson($data, $type)
+    {
+        if (!is_array($data) || empty($data)) {
+            return false;
+        }
+
+        if ($type === 'lrc') {
+            return array_key_exists('lyric', $data);
+        }
+        if ($type === 'pic' || $type === 'url') {
+            return !empty($data['url']);
+        }
+
+        foreach ($data as $item) {
+            if (is_array($item) && !empty($item['source']) && !empty($item['url_id'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function loadJson($cacheKey, $ttl, $server, $type, $id, $api, $method, $arguments = array())
+    {
+        $cached = $this->cacheRead($cacheKey);
+        if (false !== $cached && null !== $cached && '' !== $cached) {
+            $data = $this->decodeJson($cached, $server, $type, $id);
+            if ($this->isUsableJson($data, $type)) {
+                return $data;
+            }
+
+            $this->debugLog($server, $type, $id, 'discarding empty or invalid cache entry');
+        }
+
+        $payload = call_user_func_array(array($api, $method), $arguments);
+        $data = $this->decodeJson($payload, $server, $type, $id);
+        if (!$this->isUsableJson($data, $type)) {
+            $info = is_array($api->info) ? $api->info : array();
+            $this->debugLog($server, $type, $id, sprintf(
+                'upstream returned no usable data http=%s curl_errno=%s curl_error=%s',
+                isset($info['http_code']) ? (string) $info['http_code'] : 'unknown',
+                isset($api->error) ? (string) $api->error : 'unknown',
+                isset($api->status) ? (string) $api->status : ''
+            ));
+            return array();
+        }
+
+        $this->cacheWrite($cacheKey, $payload, $ttl);
         return $data;
     }
 
@@ -142,12 +200,7 @@ class Action extends Widget implements ActionInterface
 
         // 歌词解析
         if ($type == 'lrc') {
-            $data = $this->cacheRead($EID);
-            if (empty($data)) {
-                $data = $api->lyric($id);
-                $this->cacheWrite($EID, $data, 86400);
-            }
-            $data = $this->decodeJson($data, $server, $type, $id);
+            $data = $this->loadJson($EID, 86400, $server, $type, $id, $api, 'lyric', array($id));
             header('Content-Type: text/plain; charset=UTF-8');
             if (empty($data)) {
                 echo '[]';
@@ -165,15 +218,10 @@ class Action extends Widget implements ActionInterface
 
         // 专辑图片解析
         if ($type == 'pic') {
-            $data = $this->cacheRead($EID);
-            if (empty($data)) {
-                $data = $api->pic($id, 90);
-                $this->cacheWrite($EID, $data, 86400);
-            }
-            $data = $this->decodeJson($data, $server, $type, $id);
+            $data = $this->loadJson($EID, 86400, $server, $type, $id, $api, 'pic', array($id, 90));
             if (empty($data['url'])) {
                 $this->debugLog($server, $type, $id, 'cover url missing');
-                http_response_code(404);
+                $this->response->setStatus(404);
                 header('Content-Type: text/plain; charset=UTF-8');
                 echo '[]';
                 return;
@@ -185,13 +233,8 @@ class Action extends Widget implements ActionInterface
 
         // 歌曲链接解析
         if ($type == 'url') {
-            $data = $this->cacheRead($EID);
-            if (empty($data)) {
-                $rate = Options::alloc()->plugin('Meting')->bitrate;
-                $data = $api->url($id, $rate);
-                $this->cacheWrite($EID, $data, 1200);
-            }
-            $data = $this->decodeJson($data, $server, $type, $id);
+            $rate = Options::alloc()->plugin('Meting')->bitrate;
+            $data = $this->loadJson($EID, 1200, $server, $type, $id, $api, 'url', array($id, $rate));
             $url = isset($data['url']) ? $data['url'] : '';
 
             if ($server == 'netease') {
@@ -219,12 +262,7 @@ class Action extends Widget implements ActionInterface
 
         // 其它类别解析
         if (in_array($type, array('song','album','search','artist','playlist'))) {
-            $data = $this->cacheRead($EID);
-            if (empty($data)) {
-                $data = $api->$type($id);
-                $this->cacheWrite($EID, $data, 7200);
-            }
-            $data = $this->decodeJson($data, $server, $type, $id);
+            $data = $this->loadJson($EID, 7200, $server, $type, $id, $api, $type, array($id));
             $url = Common::url('action/metingapi', Helper::options()->index);
 
             if (!is_array($data)) {
@@ -439,7 +477,6 @@ class Action extends Widget implements ActionInterface
         curl_setopt($curl, CURLOPT_TIMEOUT, 10);
         curl_setopt($curl, CURLOPT_REFERER, $url);
         $result = curl_exec($curl);
-        curl_close($curl);
         return $result;
     }
 
