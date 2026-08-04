@@ -21,13 +21,13 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
  *
  * @package APlayer for Typecho | Meting
  * @author METO
- * @version 3.0.1
+ * @version 3.0.2
  * @dependence 14.10.10-*
  * @link https://github.com/mikusaa/Typecho-Plugin-APlayer
  *
  */
 
-define('METING_VERSION', '3.0.1');
+define('METING_VERSION', '3.0.2');
 
 class Plugin implements PluginInterface
 {

@@ -146,7 +146,9 @@ class Action extends Widget implements ActionInterface
     private function api()
     {
         // 参数检查
-        $this->filterReferer();
+        if (!$this->filterReferer()) {
+            return;
+        }
 
         $server = trim((string) $this->request->get('server'));
         $type = trim((string) $this->request->get('type'));
@@ -498,14 +500,14 @@ class Action extends Widget implements ActionInterface
 
     private function getCurrentOriginParts()
     {
-        $scheme = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
-        $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
-        $parts = parse_url($scheme . '://' . $host);
+        $urlPrefix = (string) $this->request->getUrlPrefix();
+        $parts = parse_url($urlPrefix);
+        $scheme = isset($parts['scheme']) ? strtolower((string) $parts['scheme']) : 'http';
 
         return array(
-            'scheme' => isset($parts['scheme']) ? strtolower((string) $parts['scheme']) : $scheme,
+            'scheme' => $scheme,
             'host'   => isset($parts['host']) ? strtolower((string) $parts['host']) : strtolower((string) $_SERVER['SERVER_NAME']),
-            'port'   => isset($parts['port']) ? intval($parts['port']) : intval(isset($_SERVER['SERVER_PORT']) ? $_SERVER['SERVER_PORT'] : ($scheme === 'https' ? 443 : 80)),
+            'port'   => isset($parts['port']) ? intval($parts['port']) : ($scheme === 'https' ? 443 : 80),
         );
     }
 
@@ -532,13 +534,14 @@ class Action extends Widget implements ActionInterface
         if (empty($salt)) {
             header("Access-Control-Allow-Origin: *");
             header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Connection, User-Agent, Cookie");
-            return;
+            return true;
         }
         if (isset($_SERVER['HTTP_REFERER']) && !$this->isSameOriginReferer($_SERVER['HTTP_REFERER'])) {
             $this->debugLog('', '', '', 'referer rejected: ' . $_SERVER['HTTP_REFERER']);
-            http_response_code(403);
-            header('Content-Type: application/json; charset=UTF-8');
-            die('[]');
+            $this->sendJson(array(), 403);
+            return false;
         }
+
+        return true;
     }
 }
