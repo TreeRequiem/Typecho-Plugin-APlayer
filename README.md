@@ -1,3 +1,5 @@
+> 基于 [mikusaa/Typecho-Plugin-APlayer](https://github.com/mikusaa/Typecho-Plugin-APlayer) fork，MIT License，改动见 [CHANGELOG.md](CHANGELOG.md)
+
 <p align="center">
 <img src="https://user-images.githubusercontent.com/2666735/30651452-58ae6c88-9deb-11e7-9e13-6beae3f6c54c.png" alt="Meting">
 </p>
@@ -26,7 +28,53 @@
   4. 后台启用插件
 
 ## 使用
-在文章编辑页面，点击编辑器上的 **音乐图标** 按钮，在弹出的窗口中输入音乐地址（见支持列表），最后点击确定即可  
+在文章编辑页面，点击编辑器上的 **音乐图标** 按钮，在弹出的窗口中输入音乐地址（见支持列表），最后点击确定即可
+
+## 自定义播放器参数
+
+默认情况下插件会读取后台配置面板里的全局默认值，同时 **所有 APlayer 公开参数** 都可以直接写在 `[Meting]` 标签上进行**内联覆盖**。
+
+### 写法规则
+
+短代码中的属性名需使用 **kebab-case**（连字符分隔），例如 APlayer 的 `listFolded` 写为 `list-folded`、`storageName` 写为 `storage-name`。布尔值写 `"true"` 或 `"false"` 字符串即可。
+
+### 示例
+
+```
+[Meting order="random" loop="one" mini="true" list-folded="true" volume="0.5"]
+[Music server="netease" id="13891298296" type="playlist" /]
+[/Meting]
+```
+
+上面这条短代码将此播放器的**播放顺序**改为随机、**循环方式**改为单曲循环、开启**迷你模式**、**列表默认折叠**、**默认音量**调为 0.5，其他未声明的参数（如 theme、preload 等）仍然使用后台配置的全局默认值。
+
+### 参数清单
+
+下表列出常用的 APlayer 参数。标记 **✅** 表示该参数可在插件后台配置面板设置全局默认值。
+
+| 参数（kebab-case） | 后台可设默认 | 说明 | 示例 |
+|---|---|---|---|
+| `theme` | ✅ | 主题颜色 | `theme="#FADFA3"` |
+| `preload` | ✅ | 预加载方式：`auto` / `none` / `metadata` | `preload="metadata"` |
+| `autoplay` | ✅ | 自动播放（移动端浏览器通常会忽略） | `autoplay="true"` |
+| `order` | ✅ | 播放顺序：`list` / `random` | `order="random"` |
+| `list-max-height` | ✅ | 播放列表最大高度 | `list-max-height="200px"` |
+| `mini` | ✅ | 迷你模式（与吸底模式冲突） | `mini="true"` |
+| `fixed` | ✅ | 吸底模式（与迷你模式冲突） | `fixed="true"` |
+| `loop` | ✅ | 循环方式：`all` / `one` / `none` | `loop="one"` |
+| `list-folded` | ✅ | 列表默认折叠 | `list-folded="true"` |
+| `volume` | ✅ | 默认音量，范围 0–1 | `volume="0.5"` |
+| `lrc-type` | ❌ | 歌词方式（0–3），默认 3 | `lrc-type="1"` |
+| `mutex` | ❌ | 多播放器互斥，默认 `true` | `mutex="false"` |
+| `storage-name` | ❌ | localStorage 存储键名 | `storage-name="my-player"` |
+
+> 未列入上表但 APlayer 官方支持的参数（如 `container` 之外的所有配置项）同样可以在 `[Meting]` 标签上内联使用，插件和 MetingJS 会自动透传。
+
+### 优先级
+
+1. **短代码内联**（写在 `[Meting]` 标签上的属性）
+2. **插件后台配置面板**（全局默认值）
+3. **前端 MetingJS / APlayer 内置默认值**
 
 ## 支持列表
 网易云音乐 http://music.163.com

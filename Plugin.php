@@ -21,13 +21,13 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
  *
  * @package APlayer for Typecho | Meting
  * @author METO
- * @version 3.0.2
+ * @version 3.0.3
  * @dependence 14.10.10-*
- * @link https://github.com/mikusaa/Typecho-Plugin-APlayer
+ * @link https://github.com/TreeRequiem/Typecho-Plugin-APlayer
  *
  */
 
-define('METING_VERSION', '3.0.2');
+define('METING_VERSION', '3.0.3');
 
 class Plugin implements PluginInterface
 {
@@ -117,6 +117,47 @@ class Plugin implements PluginInterface
             'auto',
             _t('预加载属性'),
             _t('')
+        );
+        $form->addInput($t);
+
+        $t = new Radio(
+            'mini',
+            array('true' => _t('是'),'false' => _t('否')),
+            'false',
+            _t('全局迷你模式'),
+            _t('与吸底模式冲突')
+        );
+        $form->addInput($t);
+        $t = new Radio(
+            'fixed',
+            array('true' => _t('是'),'false' => _t('否')),
+            'false',
+            _t('全局吸底模式'),
+            _t('')
+        );
+        $form->addInput($t);
+        $t = new Radio(
+            'loop',
+            array('all' => _t('列表循环'), 'one' => _t('单曲循环'), 'none' => _t('不循环')),
+            'all',
+            _t('全局循环方式'),
+            _t('')
+        );
+        $form->addInput($t);
+        $t = new Radio(
+            'listfolded',
+            array('true' => _t('是'),'false' => _t('否')),
+            'false',
+            _t('列表默认折叠'),
+            _t('')
+        );
+        $form->addInput($t);
+        $t = new Text(
+            'volume',
+            null,
+            '0.7',
+            _t('默认音量'),
+            _t('范围 0-1，例如 0.5、0.8。用户手动设置后会被记忆覆盖')
         );
         $form->addInput($t);
 
@@ -325,6 +366,11 @@ class Plugin implements PluginInterface
                 'autoplay' => Options::alloc()->plugin('Meting')->autoplay ?: 'false',
                 'list-max-height' => Options::alloc()->plugin('Meting')->height ?: '340px',
                 'order' => Options::alloc()->plugin('Meting')->order ?: 'list',
+                'mini' => Options::alloc()->plugin('Meting')->mini ?: 'false',
+                'fixed' => Options::alloc()->plugin('Meting')->fixed ?: 'false',
+                'loop' => Options::alloc()->plugin('Meting')->loop ?: 'all',
+                'list-folded' => Options::alloc()->plugin('Meting')->listfolded ?: 'false',
+                'volume' => Options::alloc()->plugin('Meting')->volume ?: '0.7',
             );
             if (isset($t['server'])) {
                 if (!isset($t['type'], $t['id'])) {
