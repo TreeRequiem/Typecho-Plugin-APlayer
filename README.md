@@ -5,8 +5,8 @@
 </p>
 
  > 在 Typecho 中使用 APlayer 播放在线音乐吧～
- > [仓库地址](https://github.com/mikusaa/Typecho-Plugin-APlayer)<br>
- > [Releases](https://github.com/mikusaa/Typecho-Plugin-APlayer/releases)
+ > [仓库地址](https://github.com/TreeRequiem/Typecho-Plugin-APlayer)<br>
+ > [Releases](https://github.com/TreeRequiem/Typecho-Plugin-APlayer/releases)
 
 ## 介绍
   1. 支持国内五大音乐平台（网易云、QQ、酷狗、百度、酷我）的单曲/专辑/歌单播放

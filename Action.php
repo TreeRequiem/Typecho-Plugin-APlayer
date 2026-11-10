@@ -439,7 +439,7 @@ class Action extends Widget implements ActionInterface
 
         header("Content-Type: text/plain; charset=UTF-8");
 
-        $shasum = $this->curl('https://raw.githubusercontent.com/mikusaa/Typecho-Plugin-APlayer/master/shasum.txt');
+        $shasum = $this->curl('https://raw.githubusercontent.com/TreeRequiem/Typecho-Plugin-APlayer/master/shasum.txt');
 
         echo "获取最新特征库...\n";
         echo $shasum."\n\n";
@@ -454,7 +454,7 @@ class Action extends Widget implements ActionInterface
             if (!file_exists(__DIR__.'/'.$filename) ||
                 !hash_equals(hash('sha256', file_get_contents(__DIR__.'/'.$filename)), $remote_sha256)) {
                 echo "下载     ".$filename;
-                $url = 'https://raw.githubusercontent.com/mikusaa/Typecho-Plugin-APlayer/master'.substr($filename, 1);
+                $url = 'https://raw.githubusercontent.com/TreeRequiem/Typecho-Plugin-APlayer/master'.substr($filename, 1);
 
                 if (file_put_contents(__DIR__.'/'.$filename, $this->curl($url))) {
                     echo " (OK)\n";
